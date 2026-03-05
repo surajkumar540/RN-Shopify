@@ -30,13 +30,15 @@ export default function ProductDetails() {
     const { toggleWishlist, isInWishlist, } = useWishList()
 
     const fetchProduct = async () => {
-        setProduct(dummyProducts.find(p => p._id === id) as any)
+        // setProduct(dummyProducts.find(p => p._id === id) as any)
+        const found: any = dummyProducts.find(p => p._id === id);
+        setProduct(found ?? null)
         setLoading(false)
     }
 
     useEffect(() => {
         fetchProduct()
-    }, [])
+    }, [id])
 
     /* ---------------- AUTO SCROLL ---------------- */
 
@@ -87,9 +89,9 @@ export default function ProductDetails() {
     const handleAddToCart = () => {
         if (!selectedSize) {
             Toast.show({
-                type:"info",
-                text1:"Please select a size",
-                text2:"You need to select a size before adding to cart"
+                type: "info",
+                text1: "Please select a size",
+                text2: "You need to select a size before adding to cart"
             })
             return;
         }
