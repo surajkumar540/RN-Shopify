@@ -31,7 +31,9 @@ const Home = () => {
 
   const categories = [{ id: "All", name: "All", icon: "grid" }, ...CATEGORIES]
 
-
+console.log('====================================');
+console.log(products,"products");
+console.log('====================================');
   useEffect(() => {
     const interval = setInterval(() => {
       let nextIndex = currentIndex + 1
