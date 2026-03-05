@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS } from '@/constants'
 import { ScrollView } from 'react-native-gesture-handler'
 import { Ionicons } from '@expo/vector-icons'
+import Toast from 'react-native-toast-message'
 
 const { width } = Dimensions.get('window')
 
@@ -23,8 +24,10 @@ export default function ProductDetails() {
 
     const [loading, setLoading] = useState(true)
     const [activeImageIndex, setActiveImageIndex] = useState(0)
+    const [selectedSize, setSelectedSize] = useState<string | null>(null)
 
-    const { toggleWishlist, isInWishlist } = useWishList()
+    const { addToCart, cartItems, itemCount } = useCart();
+    const { toggleWishlist, isInWishlist, } = useWishList()
 
     const fetchProduct = async () => {
         setProduct(dummyProducts.find(p => p._id === id) as any)
@@ -80,6 +83,18 @@ export default function ProductDetails() {
     }
 
     const isLiked = isInWishlist(product._id)
+
+    const handleAddToCart = () => {
+        if (!selectedSize) {
+            Toast.show({
+                type:"info",
+                text1:"Please select a size",
+                text2:"You need to select a size before adding to cart"
+            })
+            return;
+        }
+        addToCart(product, selectedSize || "")
+    }
 
     return (
         <View className='flex-1 bg-white'>
@@ -160,8 +175,74 @@ export default function ProductDetails() {
 
                 </View>
 
+                {/* Product Info */}
+
+                <View className='px-5'>
+                    {/* Title and Rating */}
+                    <View className='flex-row justify-between items-start mb-2'>
+                        <Text className='text-2xl font-bold text-primary flex-1 mr-4'>
+                            {product.name}
+                        </Text>
+                        <View className='flex-row justify-between items-start mb-2'>
+                            <Ionicons name="star" size={14} color={"#FFD700"} />
+                            <Text className='text-sm font-bold ml-1'>4.6</Text>
+                            <Text className='text-xs  text-secondary ml-1'>(85)</Text>
+                        </View>
+                    </View>
+                    {/* Price */}
+                    <Text className='text-2xl font-bold text-primary mb-6'>
+                        ${product.price.toFixed(2)}
+                    </Text>
+
+                    {/* Sizes */}
+                    {product.sizes && product.sizes.length > 0 && (
+                        <>
+                            <Text className='text-base text-primary font-bold mb-2'>Sizes</Text>
+                            <View className='flex-row flex-wrap gap-3'>
+                                {product.sizes.map((size, index) => (
+                                    <TouchableOpacity
+                                        key={size}
+                                        className={`w-12 h-12 rounded-full items-center justify-center border ${selectedSize === size ? "bg-primary  border-primary" : "bg-white border-gray-300"}`}
+                                        onPress={() => setSelectedSize(size)}
+                                    >
+                                        <Text className={`text-sm font-medium ${selectedSize === size ? "text-white" : "text-primary"}`}>{size}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </>
+                    )}
+
+                    {/* Description */}
+                    <Text className='text-base font-bold text-primary mt-4'>
+                        Description
+                    </Text>
+
+                    <Text className='text-secondary leading-6 mb-6'>
+                        {product.description}
+                    </Text>
+                </View>
             </ScrollView>
 
+            {/* Footer */}
+            <View className='absolute bottom-0 left-0 flex-row right-0 p-4 bg-white border-t border-gray-100'>
+                <TouchableOpacity onPress={handleAddToCart} className='w-4/5 bg-primary py-4 rounded-full items-center shadow-lg flex-row justify-center'>
+                    <Ionicons name="bag-outline" size={24} color="white" />
+                    <Text className='text-white font-medium text-base ml-2'>
+                        Add to Cart
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity className='w-1/5 py-3 flex-row justify-center relative' onPress={() => { router.push("/(tabs)/cart") }}>
+                    <Ionicons name="cart-outline" size={24} />
+                    <View className='absolute top-2 right-4 size-4 z-10 bg-black rounded-full justify-center items-center'>
+
+                        <Text className='text-white text-[9px]'>
+                            {itemCount}
+                        </Text>
+
+                    </View>
+                </TouchableOpacity>
+            </View>
         </View>
     )
 }
