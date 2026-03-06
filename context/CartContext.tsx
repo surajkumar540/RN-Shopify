@@ -1,5 +1,5 @@
 import { dummyCart, dummyWishlist } from "@/assets/assets";
-import { Product, WishlistContextType } from "@/constants/types";
+import { Product } from "@/constants/types";
 import { createContext, useContext, useEffect, useState } from "react";
 
 

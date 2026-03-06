@@ -126,7 +126,7 @@ export default function Shop() {
                     data={filteredProducts}
                     keyExtractor={(item) => item._id}
                     numColumns={2}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
                     columnWrapperStyle={{ justifyContent: "space-between" }}
                     renderItem={({ item }) => <ProductCard product={item} />}
                     onEndReached={loadMore}
@@ -139,6 +139,14 @@ export default function Shop() {
                                 style={{ marginVertical: 20 }}
                             />
                         ) : null
+                    }
+                    ListEmptyComponent={
+                        !loading && (
+                            <View className="items-center justify-center mt-20">
+                                <Ionicons name="sad-outline" size={48} color={COLORS.secondary} />
+                                <Text className="text-secondary mt-4">No products found</Text>
+                            </View>
+                        )
                     }
                 />
             )}
