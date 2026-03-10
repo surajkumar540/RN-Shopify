@@ -10,7 +10,7 @@ const PORT = 5000;
 
 await connectDB();
 
-app.post("api/clerk", express.raw({ type: 'application/json' }), clerkWebhook);
+app.post("/api/clerk", express.raw({ type: "application/json" }), clerkWebhook);
 
 app.use(express.json());
 app.use(clerkMiddleware());
