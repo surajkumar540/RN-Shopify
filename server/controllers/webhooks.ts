@@ -1,6 +1,6 @@
 import { verifyWebhook } from '@clerk/express/webhooks'
 import { Request, Response } from "express"
-import User from '../models/User'
+import User from '../models/User.js'
 
 export const clerkWebhook = async (req: Request, res: Response) => {
     try {
