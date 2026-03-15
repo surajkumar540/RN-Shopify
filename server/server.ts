@@ -5,6 +5,8 @@ import { clerkMiddleware } from "@clerk/express";
 import { clerkWebhook } from "./controllers/webhooks.js";
 import makeAdmin from "./scripts/makeAdmin.js";
 import ProductRouter from "./routes/productsRoutes.js";
+import CartRouter from "./routes/cartRoutes.js";
+import OrderRouter from "./routes/orderRoutes.js";
 
 const app = express();
 
@@ -20,6 +22,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/products", ProductRouter)
+app.use("/api/cart", CartRouter);
+app.use("/api/orders", OrderRouter);
 
 const PORT = process.env.PORT || 3000;
 
