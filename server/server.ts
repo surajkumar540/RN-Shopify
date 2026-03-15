@@ -3,6 +3,8 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 import { clerkMiddleware } from "@clerk/express";
 import { clerkWebhook } from "./controllers/webhooks.js";
+import makeAdmin from "./scripts/makeAdmin.js";
+import ProductRouter from "./routes/productsRoutes.js";
 
 const app = express();
 
@@ -17,10 +19,13 @@ app.get("/", (req, res) => {
   res.send("Server running 🚀");
 });
 
-// ✅ connect DB inside listen callback — no top-level await
+app.use("/api/products", ProductRouter)
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, async () => {
-  await connectDB();
+  await connectDB();   // ✅ connect first
+  await makeAdmin();   // ✅ run admin script after DB ready
+
   console.log(`Server running on http://localhost:${PORT}`);
 });
