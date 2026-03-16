@@ -7,6 +7,7 @@ import makeAdmin from "./scripts/makeAdmin.js";
 import ProductRouter from "./routes/productsRoutes.js";
 import CartRouter from "./routes/cartRoutes.js";
 import OrderRouter from "./routes/orderRoutes.js";
+import AddressRouter from "./routes/addressRoutes.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get("/", (req, res) => {
 app.use("/api/products", ProductRouter)
 app.use("/api/cart", CartRouter);
 app.use("/api/orders", OrderRouter);
+app.use("/api/addresses ", AddressRouter);
 
 const PORT = process.env.PORT || 3000;
 
