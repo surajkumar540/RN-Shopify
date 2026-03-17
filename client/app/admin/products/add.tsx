@@ -5,8 +5,14 @@ import { COLORS } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { CATEGORIES } from "@/constants";
+import { useRouter } from "expo-router";
+import { useAuth } from "@clerk/clerk-expo";
+import api from "@/constants/api";
 
 export default function AddProduct() {
+
+    const router = useRouter();
+    const { getToken } = useAuth();
 
     const [submitting, setSubmitting] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -45,6 +51,68 @@ export default function AddProduct() {
                 text2: 'Please fill in all required fields'
             });
             return;
+        }
+
+        try {
+            setSubmitting(true);
+            const token = await getToken();
+
+            const formData = new FormData();
+
+            //basic fields
+
+            const fields = {
+                name, description, price,
+                stock: stock || "0",
+                category,
+                isFeatured: String(isFeatured),
+                sizes
+            }
+
+            Object.entries(fields).forEach(([key, value]) => {
+                formData.append(key, value);
+            });
+
+            //images
+            images.forEach((uri, i) => {
+                const filename = uri.split("/").pop() || `image-${i}.jpg`;
+                const match = /\.(\w+)$/.exec(filename || "");
+                const type = match ? `image/${match[1]}` : `image`;
+
+                formData.append("images", {
+                    uri,
+                    name: filename,
+                    type,
+                } as any);
+            });
+
+            const { data } = await api.post("/products", formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (!data?.success) {
+                throw new Error("Upload failed");
+            }
+
+
+            Toast.show({
+                type: 'success',
+                text1: 'Success',
+                text2: 'Product created'
+            });
+
+        } catch (error: any) {
+            console.error("Failed to create product:", error);
+            Toast.show({
+                type: 'error',
+                text1: 'Failed to create product',
+                text2: error.response?.data?.message || "Something went wrong"
+            });
+        }
+        finally {
+            setSubmitting(false);
         }
     };
 
