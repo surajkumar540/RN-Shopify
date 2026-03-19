@@ -10,11 +10,9 @@ ProductRouter.get("/", getProducts);
 // Get the single products
 ProductRouter.get("/:id", getProduct);
 
-// Get the single products
-ProductRouter.get("/:id", getProduct);
-
 // Create product(Admin only)
 ProductRouter.post("/", upload.array("images", 5), protect, authorize("admin"), createProduct);
+
 
 // Update product(Admin only)
 ProductRouter.put("/:id", upload.array("images", 5), protect, authorize("admin"), updateProduct);

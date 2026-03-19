@@ -56,9 +56,10 @@ export const getProduct = async (req: Request, res: Response) => {
 // Create Product
 // Post /api/product
 export const createProduct = async (req: Request, res: Response) => {
+
+    console.log("FILES:", req.files);        // add this
+    console.log("BODY:", req.body);
     try {
-
-
 
         let images: string[] = [];
         // Handle image uploads 
@@ -186,7 +187,7 @@ export const uploadProduct = async (req: Request, res: Response) => {
             sizes
         }
 
-        if (images.length > 0) {
+        if (images.length === 0) {
             return res.status(400).json({ success: false, message: "Please upload at least one image" });
         }
 
@@ -247,7 +248,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 
         const updates = { ...req.body };
 
-        if (req.body.size) {
+        if (req.body.sizes) {
             let sizes = req.body.sizes || [];
             if (typeof sizes === "string") {
                 try {

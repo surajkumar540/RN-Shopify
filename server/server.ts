@@ -15,9 +15,9 @@ const app = express();
 app.use(cors());
 app.use(clerkMiddleware());
 
-app.post("/api/clerk", express.raw({ type: "application/json" }), clerkWebhook);
 
 app.use(express.json());
+app.post("/api/clerk", express.raw({ type: "application/json" }), clerkWebhook);
 
 app.get("/", (req, res) => {
   res.send("Server running 🚀");
