@@ -1,16 +1,33 @@
 import React, { useState } from "react";
-import { ScrollView, Text, TextInput, TouchableOpacity, View, Switch, Image, ActivityIndicator, Modal, FlatList, TouchableWithoutFeedback, Platform, } from "react-native";
-import Toast from 'react-native-toast-message';
-import { COLORS } from "@/constants";
+import {
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+    Switch,
+    Image,
+    ActivityIndicator,
+    Modal,
+    FlatList,
+    TouchableWithoutFeedback,
+    Platform,
+} from "react-native";
+import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { CATEGORIES } from "@/constants";
+import { CATEGORIES, COLORS } from "@/constants";
 import { useRouter } from "expo-router";
 import { useAuth } from "@clerk/clerk-expo";
 import api from "@/constants/api";
 
-export default function AddProduct() {
+const LOCAL_API_URL = Platform.select({
+    android: "http://192.168.1.37:3000/api",
+    ios: "http://192.168.1.37:3000/api",
+    default: "http://localhost:3000/api",
+});
 
+export default function AddProduct() {
     const router = useRouter();
     const { getToken } = useAuth();
 
@@ -25,6 +42,7 @@ export default function AddProduct() {
     const [category, setCategory] = useState("Men");
     const [sizes, setSizes] = useState("");
     const [images, setImages] = useState<string[]>([]);
+    const [imageAssets, setImageAssets] = useState<ImagePicker.ImagePickerAsset[]>([]);
     const [isFeatured, setIsFeatured] = useState(false);
 
     // PICK MULTIPLE IMAGES (MAX 5)
@@ -39,16 +57,38 @@ export default function AddProduct() {
         if (!result.canceled) {
             const uris = result.assets.map((asset) => asset.uri);
             setImages(uris.slice(0, 5));
+            setImageAssets(result.assets.slice(0, 5));
         }
+    };
+
+    const resetForm = () => {
+        setName("");
+        setDescription("");
+        setPrice("");
+        setStock("");
+        setSizes("");
+        setImages([]);
+        setImageAssets([]);
+        setIsFeatured(false);
+        setCategory("Men");
     };
 
     // Add Product
     const handleSubmit = async () => {
         if (!name || !price || !category || sizes.length < 1) {
             Toast.show({
-                type: 'error',
-                text1: 'Missing Fields',
-                text2: 'Please fill in all required fields'
+                type: "error",
+                text1: "Missing Fields",
+                text2: "Please fill in all required fields",
+            });
+            return;
+        }
+
+        if (imageAssets.length === 0) {
+            Toast.show({
+                type: "error",
+                text1: "Missing Images",
+                text2: "Please upload at least one image",
             });
             return;
         }
@@ -59,59 +99,89 @@ export default function AddProduct() {
 
             const formData = new FormData();
 
-            //basic fields
-
-            const fields = {
-                name, description, price,
+            // Basic fields
+            const fields: Record<string, string> = {
+                name,
+                description,
+                price,
                 stock: stock || "0",
                 category,
                 isFeatured: String(isFeatured),
-                sizes
-            }
+                sizes,
+            };
 
             Object.entries(fields).forEach(([key, value]) => {
                 formData.append(key, value);
             });
 
-            //images
-            images.forEach((uri, i) => {
-                const filename = uri.split("/").pop() || `image-${i}.jpg`;
-                const match = /\.(\w+)$/.exec(filename || "");
-                const type = match ? `image/${match[1]}` : `image`;
-
-                formData.append("images", {
-                    uri,
-                    name: filename,
-                    type,
-                } as any);
-            });
-
-            const { data } = await api.post("/products", formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`
+            // Images — web vs mobile
+            if (Platform.OS === "web") {
+                for (let i = 0; i < imageAssets.length; i++) {
+                    const asset = imageAssets[i];
+                    const response = await fetch(asset.uri);
+                    const blob = await response.blob();
+                    const ext = asset.uri.split(".").pop() || "jpg";
+                    const filename = `image-${i}.${ext}`;
+                    formData.append("images", blob, filename);
                 }
-            });
+            } else {
+                imageAssets.forEach((asset, i) => {
+                    const uri = asset.uri;
+                    const filename = uri.split("/").pop() || `image-${i}.jpg`;
+                    const match = /\.(\w+)$/.exec(filename);
+                    const type = match ? `image/${match[1]}` : "image/jpeg";
 
-            if (!data?.success) {
-                throw new Error("Upload failed");
+                    formData.append("images", {
+                        uri,
+                        name: filename,
+                        type,
+                    } as any);
+                });
             }
 
+            // Use fetch on web, axios on mobile (axios has FormData bugs on web)
+            let responseData: any;
+
+            if (Platform.OS === "web") {
+                const response = await fetch(`${LOCAL_API_URL}/products`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        // NO Content-Type — browser sets it with boundary automatically
+                    },
+                    body: formData,
+                });
+                responseData = await response.json();
+            } else {
+                const { data } = await api.post("/products", formData, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "multipart/form-data",
+                    },
+                });
+                responseData = data;
+            }
+
+            if (!responseData?.success) {
+                throw new Error(responseData?.message || "Upload failed");
+            }
 
             Toast.show({
-                type: 'success',
-                text1: 'Success',
-                text2: 'Product created'
+                type: "success",
+                text1: "Success",
+                text2: "Product created successfully",
             });
 
+            resetForm();
+            router.back();
         } catch (error: any) {
             console.error("Failed to create product:", error);
             Toast.show({
-                type: 'error',
-                text1: 'Failed to create product',
-                text2: error.response?.data?.message || "Something went wrong"
+                type: "error",
+                text1: "Failed to create product",
+                text2: error?.message || "Something went wrong",
             });
-        }
-        finally {
+        } finally {
             setSubmitting(false);
         }
     };
@@ -119,6 +189,7 @@ export default function AddProduct() {
     return (
         <ScrollView className="flex-1 bg-surface p-4">
             <View className="bg-white p-4 rounded-xl shadow-sm mb-20">
+
                 {/* NAME */}
                 <Text className="text-secondary text-xs font-bold mb-1 uppercase">
                     Product Name *
@@ -162,14 +233,12 @@ export default function AddProduct() {
                                 <Text className="text-lg font-bold text-center mb-4">
                                     Select Category
                                 </Text>
-
                                 <FlatList
                                     data={CATEGORIES}
                                     keyExtractor={(item) => String(item.id)}
                                     renderItem={({ item }) => (
                                         <TouchableOpacity
-                                            className={`p-4 border-b ${category === item.name ? "bg-primary/5" : ""
-                                                }`}
+                                            className={`p-4 border-b ${category === item.name ? "bg-primary/5" : ""}`}
                                             onPress={() => {
                                                 setCategory(item.name);
                                                 setModalVisible(false);
@@ -177,8 +246,7 @@ export default function AddProduct() {
                                         >
                                             <View className="flex-row justify-between">
                                                 <Text
-                                                    className={`${category === item.name ? "font-bold text-primary" : ""
-                                                        }`}
+                                                    className={`${category === item.name ? "font-bold text-primary" : ""}`}
                                                 >
                                                     {item.name}
                                                 </Text>
@@ -212,7 +280,7 @@ export default function AddProduct() {
 
                 {/* SIZES */}
                 <Text className="text-secondary text-xs font-bold mb-1 uppercase">
-                    Sizes (comma separated)
+                    Sizes (comma separated) *
                 </Text>
                 <TextInput
                     className="bg-surface p-3 rounded-lg mb-4 text-primary"
@@ -223,9 +291,8 @@ export default function AddProduct() {
 
                 {/* IMAGE PICKER */}
                 <Text className="text-secondary text-xs font-bold mb-1 uppercase">
-                    Product Images (max 5)
+                    Product Images (max 5) *
                 </Text>
-
                 <TouchableOpacity onPress={pickImages} className="mb-4">
                     {images.length > 0 ? (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -276,8 +343,7 @@ export default function AddProduct() {
                 <TouchableOpacity
                     onPress={handleSubmit}
                     disabled={submitting}
-                    className={`bg-primary p-4 rounded-xl items-center ${submitting ? "opacity-70" : ""
-                        }`}
+                    className={`bg-primary p-4 rounded-xl items-center ${submitting ? "opacity-70" : ""}`}
                 >
                     {submitting ? (
                         <ActivityIndicator color="white" />
