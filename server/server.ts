@@ -32,6 +32,7 @@ app.use("/api/admin", AdminRouter);
 
 const PORT = process.env.PORT || 3000;
 await seedProducts(process.env.MONGODB_URI!)
+
 app.listen(PORT, async () => {
   await connectDB();   // connect first
   await makeAdmin();   // run admin script after DB ready
