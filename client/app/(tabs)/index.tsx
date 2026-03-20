@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { BANNERS, dummyProducts } from "@/assets/assets";
+import { BANNERS } from "@/assets/assets";
 import { useRouter } from "expo-router";
 import { CATEGORIES } from "@/constants";
 import CategoriesItem from "@/components/CategoriesItem";
