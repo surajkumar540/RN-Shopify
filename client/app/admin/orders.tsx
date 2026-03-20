@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { COLORS, getStatusColor } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
-import { dummyOrders, dummyUser } from "@/assets/assets";
 import { useAuth } from "@clerk/clerk-expo";
 import api from "@/constants/api";
 
@@ -38,22 +37,22 @@ export default function AdminOrders() {
 
   const fetchOrders = async () => {
     try {
-        const token  = await getToken();
-        const response = await api.get("/orders/admin/all",{
-            headers:{
-                Authorization: `Bearer ${token}`
-            }
-        })
+      const token = await getToken();
+      const response = await api.get("/orders/admin/all", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        if(response.data.success){
-            setOrders(response.data.orders);
-        }
-    } catch (error:any) {
-        console.log(error);
-        Alert.alert("Error","Failed to fetch orders");
+      if (response.data.success) {
+        setOrders(response.data.orders);
+      }
+    } catch (error: any) {
+      console.log(error);
+      Alert.alert("Error", "Failed to fetch orders");
     } finally {
-        setLoading(false);
-        setRefreshing(false);
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -72,16 +71,32 @@ export default function AdminOrders() {
   };
 
   const updateStatus = async (newStatus: string) => {
-    if (!selectedOrder) return;
-    setOrders(
-      orders.map((order: any) =>
-        order._id === selectedOrder._id
-          ? { ...order, orderStatus: newStatus }
-          : order,
-      ) as any,
-    );
-    setStatusModalVisible(false);
-    setUpdating(false);
+    try {
+      if (!selectedOrder) return;
+
+      const token = await getToken();
+      const response = await api.put(
+        `/orders/${selectedOrder._id}/status`,
+        {
+          orderStatus: newStatus,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      if (response.data.success) {
+        Alert.alert("Success", "Order status updated");
+        setStatusModalVisible(false);
+        fetchOrders();
+      }
+    } catch (error: any) {
+      console.log(error);
+      Alert.alert("Error", "Failed to update order status");
+    } finally {
+      setUpdating(false);
+    }
   };
 
   if (loading && !refreshing) {
