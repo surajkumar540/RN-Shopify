@@ -9,6 +9,7 @@ import CartRouter from "./routes/cartRoutes.js";
 import OrderRouter from "./routes/orderRoutes.js";
 import AddressRouter from "./routes/addressRoutes.js";
 import AdminRouter from "./routes/adminRoutes.js";
+import { seedProducts } from "./scripts/seedProducts.js";
 
 const app = express();
 
@@ -20,7 +21,7 @@ app.use(express.json());
 app.post("/api/clerk", express.raw({ type: "application/json" }), clerkWebhook);
 
 app.get("/", (req, res) => {
-  res.send("Server running 🚀");
+  res.send("Server running");
 });
 
 app.use("/api/products", ProductRouter)
@@ -30,10 +31,10 @@ app.use("/api/addresses ", AddressRouter);
 app.use("/api/admin", AdminRouter);
 
 const PORT = process.env.PORT || 3000;
-
+await seedProducts(process.env.MONGODB_URI!)
 app.listen(PORT, async () => {
-  await connectDB();   // ✅ connect first
-  await makeAdmin();   // ✅ run admin script after DB ready
+  await connectDB();   // connect first
+  await makeAdmin();   // run admin script after DB ready
 
   console.log(`Server running on http://localhost:${PORT}`);
 });
