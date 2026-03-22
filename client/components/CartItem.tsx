@@ -8,7 +8,6 @@ export default function CartItem({ item, onRemove, onUpdateQuantity }: CartItemP
 
 
     const imageUrl = item.product.images[0];
-    console.log(imageUrl, "imageUrl")
 
     return (
         <View className='flex-row mb-4 bg-white p-3 rounded-xl'>
