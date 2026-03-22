@@ -109,38 +109,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  //   backend have ->
-  // export const removeToCartItem = async (req: Request, res: Response) => {
-  //   try {
-  //     const { size } = req.query;
-  //     const cart = await Cart.findOne({ user: req.user?._id });
-  //     if (!cart || !size) {
-  //       return res.status(404).json({
-  //         success: false,
-  //         message: "Cart not found",
-  //       });
-  //     }
-
-  //     cart.items = cart.items.filter((item) => {
-  //       item.product.toString() === req.params.productId && item.size === size;
-  //     });
-
-  //     cart.calculateTotal();
-  //     await cart.save();
-  //     await cart.populate("items.product", "name images price stock");
-
-  //     res.json({
-  //       success: true,
-  //       data: cart,
-  //     });
-  //   } catch (error: any) {
-  //     res.status(500).json({
-  //       success: false,
-  //       message: error.message,
-  //     });
-  //   }
-  // };
-
   const removeFromCart = async (itemId: string, size?: string) => {
     if (!isSignedIn) return;
 
@@ -178,6 +146,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   ) => {
     // API call to update item quantity in cart
     if (!isSignedIn) return;
+    if (quantity < 1) return;
 
     try {
       setIsLoading(true);
@@ -228,7 +197,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           type: "success",
           text1: "Cart cleared successfully",
         });
-        fetchCart();
+        setCartItems([]);
+        setCartTotal(0);
       }
     } catch (error: any) {
       Toast.show({
@@ -240,6 +210,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   };
+
+  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -259,7 +231,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         updateQuantity,
         clearCart,
         cartTotal,
-        itemCount: cartItems.length,
+        itemCount,
         isLoading,
       }}
     >
