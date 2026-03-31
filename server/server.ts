@@ -1,3 +1,4 @@
+import "dotenv/config";  // ✅ ADD THIS
 import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
@@ -15,27 +16,26 @@ const app = express();
 
 app.use(cors());
 app.use(clerkMiddleware());
-
-
 app.use(express.json());
+
 app.post("/api/clerk", express.raw({ type: "application/json" }), clerkWebhook);
 
 app.get("/", (req, res) => {
   res.send("Server running");
 });
 
-app.use("/api/products", ProductRouter)
+app.use("/api/products", ProductRouter);
 app.use("/api/cart", CartRouter);
 app.use("/api/orders", OrderRouter);
-app.use("/api/addresses ", AddressRouter);
+app.use("/api/addresses", AddressRouter);
 app.use("/api/admin", AdminRouter);
 
 const PORT = process.env.PORT || 3000;
-await seedProducts(process.env.MONGODB_URI!)
 
-app.listen(PORT, async () => {
-  await connectDB();   // connect first
-  await makeAdmin();   // run admin script after DB ready
+await connectDB();
+await makeAdmin();
+await seedProducts(process.env.MONGODB_URI!);
 
+app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
