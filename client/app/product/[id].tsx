@@ -16,7 +16,6 @@ import { COLORS } from "@/constants";
 import { ScrollView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import { dummyProducts } from "@/assets/assets";
 import api from "@/constants/api";
 
 const { width } = Dimensions.get("window");

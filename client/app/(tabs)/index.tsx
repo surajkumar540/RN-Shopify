@@ -18,6 +18,7 @@ import CategoriesItem from "@/components/CategoriesItem";
 import { Product } from "@/constants/types";
 import ProductCard from "@/components/ProductCard";
 import api from "@/constants/api";
+import { Ionicons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
@@ -183,21 +184,58 @@ const Home = () => {
           )}
         </View>
 
-        {/* Newsletter CTA */}
+        {/* Shop CTA Banner */}
+        <TouchableOpacity
+          onPress={() =>
+            router.push({ pathname: "/shop", params: { category: "All" } })
+          }
+          activeOpacity={0.92}
+          className="mb-20 rounded-2xl overflow-hidden"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08,
+            shadowRadius: 10,
+            elevation: 3,
+          }}
+        >
+          <View className="bg-rose-50 border border-rose-100 px-6 pt-5 pb-5">
+            {/* Label pill */}
+            <View className="bg-rose-100 self-start px-3 py-1 rounded-full mb-3">
+              <Text className="text-rose-500 text-[10px] font-bold uppercase tracking-widest">
+                New Arrivals
+              </Text>
+            </View>
 
-        <View className=" bg-gray-100 p-6 rounded-2xl mb-20 items-center">
-          <Text className="text-2xl font-bold text-primary text-center mb-2">
-            Join our Newsletter
-          </Text>
-          <Text className="text-secondary text-center mb-4 ">
-            Subscribe to our newsletter and get 10% off your first purchase!
-          </Text>
-          <TouchableOpacity className="bg-primary w-4/5 py-3 rounded-full items-center">
-            <Text className="text-white font-medium text-base">
-              Subscribe Now
+            {/* Heading */}
+            <Text className="text-gray-900 text-xl font-extrabold leading-snug mb-1">
+              Explore the Full{"\n"}Collection
             </Text>
-          </TouchableOpacity>
-        </View>
+            <Text className="text-gray-400 text-sm mb-5">
+              Hundreds of styles across every category.
+            </Text>
+
+            {/* Button row */}
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center bg-rose-500 px-5 py-2.5 rounded-full gap-2">
+                <Text className="text-white font-bold text-sm">Shop Now</Text>
+                <Ionicons name="arrow-forward" size={14} color="#fff" />
+              </View>
+
+              <View className="w-11 h-11 rounded-full bg-rose-100 items-center justify-center">
+                <Ionicons name="bag-handle-outline" size={20} color="#f43f5e" />
+              </View>
+            </View>
+          </View>
+
+          {/* Bottom strip */}
+          <View className="bg-rose-100 px-6 py-2 flex-row items-center gap-2">
+            <Ionicons name="pricetag-outline" size={12} color="#f43f5e" />
+            <Text className="text-rose-400 text-xs font-medium">
+              Free shipping on orders over $50
+            </Text>
+          </View>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

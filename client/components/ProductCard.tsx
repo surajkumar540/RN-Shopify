@@ -1,69 +1,127 @@
 import { View, Text, TouchableOpacity, Image } from "react-native";
-import React, { useState } from "react";
+import React from "react";
 import { ProductCardProps } from "@/constants/types";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from "@/constants";
 import { useWishList } from "@/context/WishListContext";
 
 export default function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
   const { toggleWishlist, isInWishlist } = useWishList();
-
   const isLiked = isInWishlist(product._id);
+
+  const hasDiscount = product.comparePrice && product.comparePrice > product.price;
+  const discountPct = hasDiscount
+    ? Math.round(((product.comparePrice! - product.price) / product.comparePrice!) * 100)
+    : 0;
 
   return (
     <TouchableOpacity
-      className="mb-4 w-[48%] rounded-lg border border-gray-200 overflow-hidden"
+      className="mb-4 w-[48%] rounded-2xl bg-white overflow-hidden"
+      style={{
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.07,
+        shadowRadius: 8,
+        elevation: 3,
+      }}
       onPress={() => router.push(`/product/${product._id}`)}
-      activeOpacity={0.8}
+      activeOpacity={0.92}
     >
-      <View className="relative w-full h-56 bg-gray-100">
+      {/* ── Image container ── */}
+      <View className="relative w-full h-52 bg-gray-50">
         <Image
           source={{ uri: product.images?.[0] ?? "" }}
           className="w-full h-full"
           resizeMode="cover"
         />
 
-        {/* ❤️ Favorite icon */}
+        {/* Gradient overlay at bottom */}
+        <View
+          className="absolute bottom-0 left-0 right-0 h-12"
+          style={{ background: "transparent" }}
+        />
+
+        {/* Wishlist button */}
         <TouchableOpacity
-          className="absolute top-2 right-2 z-10 p-2 bg-white rounded-full"
+          className="absolute top-2.5 right-2.5 z-10 w-8 h-8 bg-white rounded-full items-center justify-center"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.12,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
           onPress={() => toggleWishlist(product)}
+          activeOpacity={0.8}
         >
           <Ionicons
             name={isLiked ? "heart" : "heart-outline"}
-            size={24}
-            color={isLiked ? COLORS.accent : COLORS.primary}
+            size={16}
+            color={isLiked ? "#f43f5e" : "#9ca3af"}
           />
         </TouchableOpacity>
 
-        {product.isFeatured && (
-          <View className="absolute top-2 left-2 z-10 px-2 py-1 bg-primary rounded">
-            <Text className="text-white text-xs font-bold uppercase">
-              Featured
+        {/* Badges */}
+        <View className="absolute top-2.5 left-2.5 gap-1">
+          {product.isFeatured && (
+            <View className="bg-amber-400 px-2 py-0.5 rounded-md">
+              <Text className="text-white text-[10px] font-bold uppercase tracking-wide">
+                Featured
+              </Text>
+            </View>
+          )}
+          {hasDiscount && (
+            <View className="bg-rose-500 px-2 py-0.5 rounded-md">
+              <Text className="text-white text-[10px] font-bold">
+                -{discountPct}%
+              </Text>
+            </View>
+          )}
+          {product.stock === 0 && (
+            <View className="bg-gray-700 px-2 py-0.5 rounded-md">
+              <Text className="text-white text-[10px] font-bold uppercase">
+                Sold Out
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* ── Info ── */}
+      <View className="px-3 pt-2.5 pb-3">
+        {/* Rating */}
+        {product.ratings?.count > 0 && (
+          <View className="flex-row items-center mb-1.5">
+            <Ionicons name="star" size={11} color="#f59e0b" />
+            <Text className="text-[11px] font-semibold text-amber-600 ml-1">
+              {product.ratings.average.toFixed(1)}
+            </Text>
+            <Text className="text-[10px] text-gray-400 ml-1">
+              ({product.ratings.count})
             </Text>
           </View>
         )}
-      </View>
 
-      {/* Ratings */}
-      {product.ratings && (
-        <View className="flex-row items-center mt-2 px-3">
-          <Ionicons name="star" size={16} color="#FBBF24" />
-          <Text className="text-sm text-primary ml-1">
-            {product.ratings.average.toFixed(1)}
-          </Text>
-        </View>
-      )}
-
-      <View className="p-3">
-        <Text className="text-primary font-medium mb-1" numberOfLines={1}>
+        {/* Name */}
+        <Text
+          className="text-gray-900 font-semibold text-[13px] leading-tight mb-2"
+          numberOfLines={2}
+        >
           {product.name}
         </Text>
 
-        <Text className="text-primary font-medium text-base">
-          ${product.price.toFixed(2)}
-        </Text>
+        {/* Price row */}
+        <View className="flex-row items-center gap-1.5">
+          <Text className="text-gray-900 font-bold text-sm">
+            ${product.price.toFixed(2)}
+          </Text>
+          {hasDiscount && (
+            <Text className="text-gray-400 text-xs line-through">
+              ${product.comparePrice!.toFixed(2)}
+            </Text>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
