@@ -24,7 +24,7 @@ const { width } = Dimensions.get("window");
 
 const Home = () => {
   const router = useRouter();
-  const scrollRef = useRef(null);
+  const scrollRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
