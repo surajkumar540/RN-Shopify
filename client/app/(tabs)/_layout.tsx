@@ -1,13 +1,14 @@
-import React from 'react'
-import { Tabs } from 'expo-router'
-import { Feather, Ionicons } from '@expo/vector-icons'
-import { COLORS } from "@/constants"
-import { useCart } from '@/context/CartContext'
-import { View } from 'react-native'
+import React from "react";
+import { Tabs } from "expo-router";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { COLORS } from "@/constants";
+import { useCart } from "@/context/CartContext";
+import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
-
-  const { cartItems } = useCart()
+  const { cartItems } = useCart();
+  const { bottom } = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -20,41 +21,70 @@ export default function TabLayout() {
           backgroundColor: "#fff",
           borderTopWidth: 1,
           borderTopColor: "#F0F0F0",
-          height: 56,
-          paddingTop: 8
-        }
+          height: 56 + bottom, // ← add safe area bottom
+          paddingTop: 8,
+          paddingBottom: bottom, // ← push icons up above home button
+        },
       }}
     >
-      <Tabs.Screen name="index" options={{
-        tabBarIcon: ({
-          color, focused
-        }) => <Ionicons name={focused ? 'home' : "home-outline"} size={26} color={color} />
-      }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              size={26}
+              color={color}
+            />
+          ),
+        }}
+      />
 
-      <Tabs.Screen name="cart" options={{
-        tabBarIcon: ({
-          color, focused
-        }) => <View className='relative'>
-            <Feather name={focused ? 'shopping-cart' : "shopping-cart"} size={26} color={color} />
-            {cartItems.length > 0 && <View className='absolute -top-2 -right-2 size-3 bg-accent rounded-full items-center justify-center'>
-              <Ionicons name='ellipse' size={6} color={"white"} />
+      <Tabs.Screen
+        name="cart"
+        options={{
+          tabBarIcon: ({ color, focused }) => (
+            <View className="relative">
+              <Feather
+                name={focused ? "shopping-cart" : "shopping-cart"}
+                size={26}
+                color={color}
+              />
+              {cartItems.length > 0 && (
+                <View className="absolute -top-2 -right-2 size-3 bg-accent rounded-full items-center justify-center">
+                  <Ionicons name="ellipse" size={6} color={"white"} />
+                </View>
+              )}
             </View>
-            }
-          </View>
-      }} />
+          ),
+        }}
+      />
 
-      <Tabs.Screen name="favorites" options={{
-        tabBarIcon: ({
-          color, focused
-        }) => <Ionicons name={focused ? 'heart' : "heart-outline"} size={26} color={color} />
-      }} />
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "heart" : "heart-outline"}
+              size={26}
+              color={color}
+            />
+          ),
+        }}
+      />
 
-      <Tabs.Screen name="profile" options={{
-        tabBarIcon: ({
-          color, focused
-        }) => <Ionicons name={focused ? 'person' : "person-outline"} size={26} color={color} />
-      }} />
-
+      <Tabs.Screen
+        name="profile"
+        options={{
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "person" : "person-outline"}
+              size={26}
+              color={color}
+            />
+          ),
+        }}
+      />
     </Tabs>
-  )
+  );
 }

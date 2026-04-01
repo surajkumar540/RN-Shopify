@@ -1,4 +1,4 @@
-import "dotenv/config";  // ✅ ADD THIS
+import "dotenv/config"; // ✅ ADD THIS
 import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
@@ -11,6 +11,7 @@ import OrderRouter from "./routes/orderRoutes.js";
 import AddressRouter from "./routes/addressRoutes.js";
 import AdminRouter from "./routes/adminRoutes.js";
 import { seedProducts } from "./scripts/seedProducts.js";
+import WishlistRouter from "./routes/wishlistRoutes.js";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api/cart", CartRouter);
 app.use("/api/orders", OrderRouter);
 app.use("/api/addresses", AddressRouter);
 app.use("/api/admin", AdminRouter);
+app.use("/api/wishlist", WishlistRouter);
 
 const PORT = process.env.PORT || 3000;
 

@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Product } from "@/constants/types";
-import { dummyProducts } from "@/assets/assets";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@/components/Header";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,7 +27,6 @@ export default function Shop() {
 
   const [search, setSearch] = useState("");
 
-  const LIMIT = 10;
 
   const fetchProducts = async (pageNumber = 1) => {
     if (pageNumber === 1) {
