@@ -45,7 +45,7 @@ export default function AdminOrders() {
       });
 
       if (response.data.success) {
-        setOrders(response.data.orders);
+        setOrders(response.data.data);
       }
     } catch (error: any) {
       console.log(error);
