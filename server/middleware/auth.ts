@@ -8,23 +8,34 @@ export const protect = async (
 ) => {
   try {
     console.log("PROTECT HIT");
+
     const { userId } = req.auth();
     console.log("userId:", userId);
 
     if (!userId) {
-      console.log("NO USER ID");
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authorized" });
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized",
+      });
     }
 
     const user = await User.findOne({ clerkId: userId });
-    console.log("USER FROM DB:", user?._id);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found in DB",
+      });
+    }
+
     req.user = user;
     next();
   } catch (error: any) {
     console.log("AUTH ERROR:", error.message);
-    res.status(500).json({ success: false, message: "Authentication failed" });
+    res.status(500).json({
+      success: false,
+      message: "Authentication failed",
+    });
   }
 };
 
