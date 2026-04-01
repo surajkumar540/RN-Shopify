@@ -3,64 +3,38 @@ import Order from "../models/Order.js";
 import Cart from "../models/Cart.js";
 import Product from "../models/Products.js";
 
-// Get user orders
 export const getOrders = async (req: Request, res: Response) => {
     try {
         const query = { user: req.user._id };
         const orders = await Order.find(query).populate("items.product", "name images").sort("-createdAt");
-        res.json({
-            success: true,
-            data: orders,
-        });
+        res.json({ success: true, data: orders });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
 };
-
-
-// Get single orders
-// Get /api/orders/:id
 
 export const getOrder = async (req: Request, res: Response) => {
     try {
         const order = await Order.findById(req.params.id).populate("items.product", "name images");
-        if (!order) {
-            return res.status(404).json({ message: "Order not found" });
-        }
-
+        if (!order) return res.status(404).json({ message: "Order not found" });
         if (order.user.toString() !== req.user._id.toString() && req.user.role !== "admin") {
             return res.status(403).json({ message: "Unauthorized access" });
         }
-
-        res.json({
-            success: true,
-            data: order,
-        });
+        res.json({ success: true, data: order });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
 };
 
-
-//Create Order from cart
-// Get /api/orders/
-
 export const createOrder = async (req: Request, res: Response) => {
     try {
-
         const { shippingAddress, notes } = req.body;
-
         const cart = await Cart.findOne({ user: req.user._id }).populate("items.product");
 
         if (!cart || cart.items.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Cart is empty"
-            });
+            return res.status(400).json({ success: false, message: "Cart is empty" });
         }
 
-
-        // Verify stock and prepare order items
         const orderItems = [];
         for (const item of cart.items) {
             const product = await Product.findById(item.product._id);
@@ -77,16 +51,13 @@ export const createOrder = async (req: Request, res: Response) => {
                 price: (item.product as any).price,
                 size: item.size,
             });
-            // Reduce stock
             product.stock -= item.quantity;
             await product.save();
-
         }
 
         const subTotal = cart.totalAmount;
         const shippingCost = 2;
         const tax = 0;
-
         const totalAmount = subTotal + shippingCost + tax;
 
         const order = await Order.create({
@@ -102,94 +73,54 @@ export const createOrder = async (req: Request, res: Response) => {
             notes,
             paymentIntentId: req.body.paymentIntentId,
             orderNumber: "ORD-" + Date.now(),
-        })
-
-        if (req.body.paymentMethod === "stripe") {
-            cart.items = [];
-            cart.totalAmount = 0;
-            await cart.save();
-        }
-
-        res.status(201).json({
-            success: true,
-            data: order,
         });
 
+        // ✅ Har case mein cart clear
+        cart.items = [];
+        cart.totalAmount = 0;
+        await cart.save();
+
+        res.status(201).json({ success: true, data: order });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
 };
-
-//Update Order from cart
-// Put /api/orders/:id/status
 
 export const UpdateOrderStatus = async (req: Request, res: Response) => {
     try {
-
         const { orderStatus, paymentStatus } = req.body;
-
         const order = await Order.findById(req.params.id);
-
-        if (!order) {
-            return res.status(404).json({ message: "Order not found" });
-        }
-
-
-        if (orderStatus) {
-            order.orderStatus = orderStatus;
-        }
-
-        if (paymentStatus) {
-            order.paymentStatus = paymentStatus;
-        }
-
-        if (orderStatus === "delivered") {
-            order.deliveredAt = new Date();
-        }
-
+        if (!order) return res.status(404).json({ message: "Order not found" });
+        if (orderStatus) order.orderStatus = orderStatus;
+        if (paymentStatus) order.paymentStatus = paymentStatus;
+        if (orderStatus === "delivered") order.deliveredAt = new Date();
         await order.save();
-        res.json({
-            success: true,
-            data: order,
-        });
-
+        res.json({ success: true, data: order });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
 };
 
-
-// Get All orders
-// Get /api/orders/admin/all
-
 export const getAllOrders = async (req: Request, res: Response) => {
     try {
-        const { page = 1, limit = 10 } = req.query;
-
+        const { page = 1, limit = 10, status } = req.query; // ✅ status fix
         const query: any = {};
-
-        if (status) {
-            query.orderStatus = status;
-        }
+        if (status) query.orderStatus = status;
 
         const total = await Order.countDocuments(query);
-
-        const orders = await Order.find(query).populate("user", "name email").populate("items.product", "name").sort("-createdAt").skip(Number(page - 1) * Number(limit)).limit(Number(limit));
+        const orders = await Order.find(query)
+            .populate("user", "name email")
+            .populate("items.product", "name")
+            .sort("-createdAt")
+            .skip(Number(page - 1) * Number(limit))
+            .limit(Number(limit));
 
         res.json({
             success: true,
             data: orders,
-            pagination: {
-                total, page:Number(page), limit: Number(limit),
-                pages: Math.ceil(total / Number(limit)),
-            }
-        })
-
-
-
+            pagination: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / Number(limit)) }
+        });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
 };
-
-
