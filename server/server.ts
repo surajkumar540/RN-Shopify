@@ -25,6 +25,7 @@ app.get("/", (req, res) => {
   res.send("Server running");
 });
 
+
 app.use("/api/products", ProductRouter);
 app.use("/api/cart", CartRouter);
 app.use("/api/orders", OrderRouter);

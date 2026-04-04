@@ -1,336 +1,333 @@
-import { Request, Response } from 'express';
-import Product from '../models/Products.js';
-import cloudinary from '../config/cloudinary.js';
+import { Request, Response } from "express";
+import Product from "../models/Products.js";
+import cloudinary from "../config/cloudinary.js";
 
 //Get All Products with pagination
 // Get /api/products
 export const getProducts = async (req: Request, res: Response) => {
-    try {
-        const { page = 1, limit = 10 } = req.query;
-        const query: any = { isActive: true };
+  try {
+    const { page = 1, limit = 10, sort = "-createdAt", category, minPrice, maxPrice } = req.query;
 
-        const total = await Product.countDocuments(query);
-        const products = await Product.find(query).skip((Number(page) - 1) * Number(limit)).limit(Number(limit));
+    console.log("🔥 getProducts called with:", req.query); // debug
 
-        res.json({
-            success: true,
-            data: products,
-            pagination: {
-                total,
-                page: Number(page),
-                pages: Math.ceil(total / Number(limit))
-            }
-        });
+    const query: any = { isActive: true };
 
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+    // Category filter
+    if (category && category !== "All") {
+      query.category = category;
     }
-}
+
+    // Price filter
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
+    }
+
+    console.log("🎯 Final query:", JSON.stringify(query)); // debug
+
+    const total = await Product.countDocuments(query);
+    const products = await Product.find(query)
+      .sort(sort as string)
+      .skip((Number(page) - 1) * Number(limit))
+      .limit(Number(limit));
+
+    res.json({
+      success: true,
+      data: products,
+      pagination: {
+        total,
+        page: Number(page),
+        pages: Math.ceil(total / Number(limit)),
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 //Get Single Product
 // Get /api/product :id
 export const getProduct = async (req: Request, res: Response) => {
-    try {
-
-        const product = await Product.findById(req.params.id);
-        if (!product) {
-            return res.status(404).json({ success: false, message: "Product not found" });
-        }
-
-        res.json({
-            success: true,
-            data: product,
-        });
-
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
     }
-}
+
+    res.json({
+      success: true,
+      data: product,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 // Create Product
 // Post /api/product
 export const createProduct = async (req: Request, res: Response) => {
-
-    console.log("FILES:", req.files);        // add this
-    console.log("BODY:", req.body);
-    try {
-
-        let images: string[] = [];
-        // Handle image uploads 
-        if (req.files && (req.files as any).length > 0) {
-
-            const uploadPromises = (req.files as any).map((file: any) => {
-                return new Promise((resolve, reject) => {
-
-                    const uploadStream = cloudinary.uploader.upload_stream(
-                        { folder: "products" },
-                        (error, result) => {
-                            if (error) {
-                                reject(error);
-                            } else {
-                                resolve(result!.secure_url);
-                            }
-                        }
-                    );
-
-                    uploadStream.end(file.buffer);
-                });
-            });
-
-            images = await Promise.all(uploadPromises);
-
-        }
-
-
-
-        let sizes = req.body.sizes || [];
-        if (typeof sizes === "string") {
-            try {
-                sizes = JSON.parse(sizes);
-            } catch (error) {
-                sizes = sizes.split(",").map((size: string) => size.trim()).filter((size: string) => size !== "");
-            }
-        }
-
-        // Ensure sizes is an array 
-        if (!Array.isArray(sizes)) {
-            sizes = [sizes];
-        }
-
-        const productData = {
-            ...req.body,
-            images: images,
-            sizes
-        }
-
-        if (images.length === 0) {
-            return res.status(400).json({ success: false, message: "Please upload at least one image" });
-        }
-
-        const product = await Product.create(productData);
-        res.status(201).json({
-            success: true,
-            data: product
+  console.log("FILES:", req.files);
+  console.log("BODY:", req.body);
+  try {
+    let images: string[] = [];
+    if (req.files && (req.files as any).length > 0) {
+      const uploadPromises = (req.files as any).map((file: any) => {
+        return new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: "products" },
+            (error, result) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve(result!.secure_url);
+              }
+            },
+          );
+          uploadStream.end(file.buffer);
         });
-
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+      });
+      images = await Promise.all(uploadPromises);
     }
-}
+
+    let sizes = req.body.sizes || [];
+    if (typeof sizes === "string") {
+      try {
+        sizes = JSON.parse(sizes);
+      } catch (error) {
+        sizes = sizes
+          .split(",")
+          .map((size: string) => size.trim())
+          .filter((size: string) => size !== "");
+      }
+    }
+
+    if (!Array.isArray(sizes)) {
+      sizes = [sizes];
+    }
+
+    const productData = {
+      ...req.body,
+      images: images,
+      sizes,
+    };
+
+    if (images.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Please upload at least one image" });
+    }
+
+    const product = await Product.create(productData);
+    res.status(201).json({
+      success: true,
+      data: product,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 // UPLOAD PRODUCT
 // PUT /api/product/:id'
 export const uploadProduct = async (req: Request, res: Response) => {
-    try {
+  try {
+    let images: string[] = [];
 
-        let images: string[] = [];
-
-        if (req.body.existingImages) {
-            if (Array.isArray(req.body.existingImages)) {
-                images = req.body.existingImages;
-            } else {
-                images = [req.body.existingImages];
-            }
-        }
-
-        // Handle image uploads 
-        if (req.files && (req.files as any).length > 0) {
-
-            const uploadPromises = (req.files as any).map((file: any) => {
-                return new Promise((resolve, reject) => {
-
-                    const uploadStream = cloudinary.uploader.upload_stream(
-                        { folder: "products" },
-                        (error, result) => {
-                            if (error) {
-                                reject(error);
-                            } else {
-                                resolve(result!.secure_url);
-                            }
-                        }
-                    );
-
-                    uploadStream.end(file.buffer);
-                });
-            });
-
-            images = await Promise.all(uploadPromises);
-
-        }
-
-        let sizes = req.body.sizes || [];
-        if (typeof sizes === "string") {
-            try {
-                sizes = JSON.parse(sizes);
-            } catch (error) {
-                sizes = sizes.split(",").map((size: string) => size.trim()).filter((size: string) => size !== "");
-            }
-        }
-
-        // Ensure sizes is an array 
-        if (!Array.isArray(sizes)) {
-            sizes = [sizes];
-        }
-
-        const productData = {
-            ...req.body,
-            images: images,
-            sizes
-        }
-
-        if (images.length === 0) {
-            return res.status(400).json({ success: false, message: "Please upload at least one image" });
-        }
-
-        const product = await Product.create(productData);
-        res.status(201).json({
-            success: true,
-            data: product
-        });
-
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+    if (req.body.existingImages) {
+      if (Array.isArray(req.body.existingImages)) {
+        images = req.body.existingImages;
+      } else {
+        images = [req.body.existingImages];
+      }
     }
-}
+
+    if (req.files && (req.files as any).length > 0) {
+      const uploadPromises = (req.files as any).map((file: any) => {
+        return new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: "products" },
+            (error, result) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve(result!.secure_url);
+              }
+            },
+          );
+          uploadStream.end(file.buffer);
+        });
+      });
+      images = await Promise.all(uploadPromises);
+    }
+
+    let sizes = req.body.sizes || [];
+    if (typeof sizes === "string") {
+      try {
+        sizes = JSON.parse(sizes);
+      } catch (error) {
+        sizes = sizes
+          .split(",")
+          .map((size: string) => size.trim())
+          .filter((size: string) => size !== "");
+      }
+    }
+
+    if (!Array.isArray(sizes)) {
+      sizes = [sizes];
+    }
+
+    const productData = {
+      ...req.body,
+      images: images,
+      sizes,
+    };
+
+    if (images.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Please upload at least one image" });
+    }
+
+    const product = await Product.create(productData);
+    res.status(201).json({
+      success: true,
+      data: product,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 // Update Product
 // Put /api/product/:id
 export const updateProduct = async (req: Request, res: Response) => {
-    try {
-        let images: string[] = [];
+  try {
+    let images: string[] = [];
 
-
-        if (req.body.existingImages) {
-            if (Array.isArray(req.body.existingImages)) {
-                images = [...req.body.existingImages];
-            } else {
-                images = [req.body.existingImages];
-            }
-
-        }
-
-        // Handle image uploads 
-        if (req.files && (req.files as any).length > 0) {
-
-            const uploadPromises = (req.files as any).map((file: any) => {
-                return new Promise((resolve, reject) => {
-
-                    const uploadStream = cloudinary.uploader.upload_stream(
-                        { folder: "products" },
-                        (error, result) => {
-                            if (error) {
-                                reject(error);
-                            } else {
-                                resolve(result!.secure_url);
-                            }
-                        }
-                    );
-
-                    uploadStream.end(file.buffer);
-                });
-            });
-            const newImages = await Promise.all(uploadPromises);
-            images = [...images, ...newImages];
-
-        }
-
-        const updates = { ...req.body };
-
-        if (req.body.sizes) {
-            let sizes = req.body.sizes || [];
-            if (typeof sizes === "string") {
-                try {
-                    sizes = JSON.parse(sizes);
-                } catch (error) {
-                    sizes = sizes.split(",").map((size: string) => size.trim()).filter((size: string) => size !== "");
-                }
-            }
-
-            if (!Array.isArray(sizes)) sizes = [sizes];
-            updates.sizes = sizes;
-        }
-
-
-        if (req.body.existingImages || (req.files && (req.files as any).length > 0)) {
-            updates.images = images;
-        }
-
-        delete updates.existingImages;
-
-        const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
-
-        if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: "Product not found"
-            });
-        }
-
-        res.json({
-            success: true,
-            data: product
-        });
-
+    if (req.body.existingImages) {
+      if (Array.isArray(req.body.existingImages)) {
+        images = [...req.body.existingImages];
+      } else {
+        images = [req.body.existingImages];
+      }
     }
-    catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message
+
+    if (req.files && (req.files as any).length > 0) {
+      const uploadPromises = (req.files as any).map((file: any) => {
+        return new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: "products" },
+            (error, result) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve(result!.secure_url);
+              }
+            },
+          );
+          uploadStream.end(file.buffer);
         });
+      });
+      const newImages = await Promise.all(uploadPromises);
+      images = [...images, ...newImages];
     }
-}
+
+    const updates = { ...req.body };
+
+    if (req.body.sizes) {
+      let sizes = req.body.sizes || [];
+      if (typeof sizes === "string") {
+        try {
+          sizes = JSON.parse(sizes);
+        } catch (error) {
+          sizes = sizes
+            .split(",")
+            .map((size: string) => size.trim())
+            .filter((size: string) => size !== "");
+        }
+      }
+      if (!Array.isArray(sizes)) sizes = [sizes];
+      updates.sizes = sizes;
+    }
+
+    if (req.body.existingImages || (req.files && (req.files as any).length > 0)) {
+      updates.images = images;
+    }
+
+    delete updates.existingImages;
+
+    const product = await Product.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 // Delete Product
 // Delete /api/product/:id
 export const deleteProduct = async (req: Request, res: Response) => {
-    try {
-        const product = await Product.findById(req.params.id);
+  try {
+    const product = await Product.findById(req.params.id);
 
-        if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: "Product not found"
-            });
-        }
-
-        //  Delete Images from Cloudinary
-        if (product.images && product.images.length > 0) {
-            const deletePromises = product.images.map((imageUrl) => {
-                const publicIdMatch = imageUrl.match(/\/v\d+\/([^\/]+)\.[a-zA-Z]+$/);
-                const publicId = publicIdMatch ? publicIdMatch[1] : null;
-                if (publicId) {
-                    return cloudinary.uploader.destroy(`products/${publicId}`);
-                } else {
-                    return Promise.resolve();
-                }
-            })
-            await Promise.all(deletePromises);
-        }
-
-        await Product.findByIdAndDelete(req.params.id);
-
-        res.json({
-            success: true,
-            message: "Product deleted successfully"
-        });
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
     }
-    catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-}
 
+    if (product.images && product.images.length > 0) {
+      const deletePromises = product.images.map((imageUrl) => {
+        const publicIdMatch = imageUrl.match(/\/v\d+\/([^\/]+)\.[a-zA-Z]+$/);
+        const publicId = publicIdMatch ? publicIdMatch[1] : null;
+        if (publicId) {
+          return cloudinary.uploader.destroy(`products/${publicId}`);
+        } else {
+          return Promise.resolve();
+        }
+      });
+      await Promise.all(deletePromises);
+    }
+
+    await Product.findByIdAndDelete(req.params.id);
+
+    res.json({
+      success: true,
+      message: "Product deleted successfully",
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
