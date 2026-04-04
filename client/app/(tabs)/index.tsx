@@ -151,7 +151,7 @@ const Home = () => {
                 onPress={() =>
                   router.push({
                     pathname: "/shop",
-                    params: { category: cat.id === "all" ? "" : cat.name },
+                    params: { category: cat.id === "All" ? "All" : cat.name },
                   })
                 }
               />

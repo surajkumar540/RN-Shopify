@@ -1,13 +1,13 @@
 {
   "expo": {
     "name": "client",
-    "slug": "client",
+    "slug": "ecommerce-app-suraj",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "client",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
@@ -46,6 +46,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "70930ca7-58dc-47de-96b8-9778f362eadb"
+      }
     }
   }
 }
